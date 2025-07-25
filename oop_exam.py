@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from random import shuffle
+from functools import wraps
+from random import shuffle as py_shuffle
 
 
 class ICard(ABC):
@@ -111,6 +112,21 @@ class IDeck(ABC):
     def add_card(self, card): pass
 
 
+# ========== Decorator ==========
+def fair_deck(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        cards=args[0]
+        new_card=args[1]
+        if isinstance(cards, Deck):
+           if new_card in cards:
+                    raise DeckCheatingError(f"Duplicate card found: {new_card}")
+        result = func(*args, **kwargs)
+        return result
+
+    return wrapper
+
+
 class Deck(IDeck):
     def __init__(self, shuffle=True):
         self._cards = [Card(suit, rank) for suit in CardSuit for rank in CardRank]
@@ -121,17 +137,18 @@ class Deck(IDeck):
     def cards(self):
         return list(self._cards)
 
-    def add_card(self, card):
-        if card in self._cards:
-            raise DeckCheatingError("Card already exists in the deck!")
-        self._cards.append(card)
+    @fair_deck
+    def add_card(self, _card):
+        # if card in self._cards:
+        #     raise DeckCheatingError("Card already exists in the deck!")
+        self._cards.append(_card)
 
     def draw(self):
         """ if cards exist, get and remove the card in the index 0"""
         return self._cards.pop(0) if self._cards else None
 
     def shuffle(self):
-        shuffle(self._cards)
+        py_shuffle(self._cards)
 
     def __len__(self):
         return len(self._cards)
@@ -152,9 +169,11 @@ class Deck(IDeck):
     def __min__(self):
         return min(self._cards)
 
+
 # ========== Utility Functions ==========
 def max_card(*cards):
     return max(cards)
+
 
 def cards_stats(*cards, **kwargs):
     results = {}
@@ -188,8 +207,8 @@ if __name__ == '__main__':
 
     print("Drawing 3 cards to separate desk:")
     drawn = [deck.draw() for _ in range(3)]
-    for card in drawn:
-        print(card)
+    for card_d in drawn:
+        print(card_d)
     print(f"After draw, Deck has {len(deck)} cards.")
     print("Adding a card back to the deck...")
     deck.add_card(drawn[0])
@@ -204,3 +223,14 @@ if __name__ == '__main__':
 
     print("\nUsing cards_stats:")
     print(cards_stats(*deck.cards, max=2, min=1, len=1))
+
+    # print("\nTesting fair_deck decorator:")
+
+
+    # @fair_deck
+    # def create_fair_deck():
+    #     return Deck()
+
+
+    # fair_deck_instance = create_fair_deck()
+    # print("Deck created successfully.")

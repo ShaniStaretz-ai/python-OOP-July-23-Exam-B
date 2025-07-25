@@ -5,32 +5,41 @@ from random import shuffle as py_shuffle
 
 
 class ICard(ABC):
+    """interface for Card class"""
+
     @property
     @abstractmethod
     def suit(self):
+        """Abstract method for suit property"""
         pass
 
     @property
     @abstractmethod
     def rank(self):
+        """Abstract method for rank property"""
         pass
 
     @abstractmethod
     def get_display_name(self):
+        """Abstract method for better card display properties"""
         pass
 
 
 class CardSuit(Enum):
+    """ each shape as value from 1 to 4"""
     HEARTS = 1
     DIAMONDS = 2
     CLUBS = 3
     SPADES = 4
 
     def __str__(self):
+        """return the key with capitalized first letter only """
         return self.name.capitalize()
 
 
 class CardRank(Enum):
+    """Each number has it's value in number type.\n
+     except ACE= 14 since it's the biggest"""
     TWO = 2
     THREE = 3
     FOUR = 4
@@ -46,10 +55,13 @@ class CardRank(Enum):
     ACE = 14
 
     def __str__(self):
+        """return the key with capitalized first letter only """
         return self.name.capitalize()
 
 
 class Card(ICard):
+    """Class Card implement interface 'ICard' and contain properties from enums ['CardSuit','CardRank']"""
+
     def __init__(self, suit: CardSuit, rank: CardRank):
         if not isinstance(suit, CardSuit) or not isinstance(rank, CardRank):
             raise ValueError("Invalid suit or rank")
@@ -58,30 +70,38 @@ class Card(ICard):
 
     @property
     def suit(self):
+        """getter method for suit property"""
         return self._suit
 
     @property
     def rank(self):
+        """getter method for rank property"""
         return self._rank
 
     def get_display_name(self):
+        """ method for better display card properties"""
         return f"{self.rank} of {self.suit}"
 
     def __str__(self):
+        """implement to_string method better card display properties"""
         return self.get_display_name()
 
     def __repr__(self):
         return f"'{self.get_display_name()}'"
 
     def __eq__(self, other):
+        """check if 2 cards with the same rank and suit"""
         if not isinstance(other, Card):
             return NotImplemented
         return self.rank == other.rank and self.suit == other.suit
 
     def __hash__(self):
+        """create hash number of uniqueness of card"""
         return hash((self.rank, self.suit))
 
     def __lt__(self, other):
+        """compare 2 cards, if same rank, compare suit\n
+        returns True if self smaller than the other"""
         if not isinstance(other, Card):
             return NotImplemented
         if self.rank.value == other.rank.value:
@@ -89,38 +109,53 @@ class Card(ICard):
         return self.rank.value < other.rank.value
 
     def __gt__(self, other):
+        """compare 2 cards, if same rank, compare suit\n
+                returns True if other smaller than self"""
         return other < self
 
 
 class DeckCheatingError(Exception):
     """Raised when a card appears more than once in the deck"""
-    pass
+
+    def __init__(self, message):
+        self.message = message
 
 
 class IDeck(ABC):
+    """interface for Desk class"""
+
     @property
     @abstractmethod
-    def cards(self): pass
+    def cards(self):
+        """Abstract method for cards property"""
+        pass
 
     @abstractmethod
-    def shuffle(self): pass
+    def shuffle(self):
+        """Abstract method for shuffle function"""
+        pass
 
     @abstractmethod
-    def draw(self): pass
+    def draw(self):
+        """Abstract method for draw function"""
+        pass
 
     @abstractmethod
-    def add_card(self, card): pass
+    def add_card(self, card):
+        """Abstract method for add a card for the deck of card"""
+        pass
 
 
 # ========== Decorator ==========
 def fair_deck(func):
+    """decorator to validate the existence of card, before adding new card to the desk"""
     @wraps(func)
     def wrapper(*args, **kwargs):
-        cards=args[0]
-        new_card=args[1]
+        cards = args[0]
+        new_card = args[1]
         if isinstance(cards, Deck):
-           if new_card in cards:
-                    raise DeckCheatingError(f"Duplicate card found: {new_card}")
+            if new_card in cards:
+                raise DeckCheatingError(f"Duplicate card found: {new_card}")
         result = func(*args, **kwargs)
         return result
 
@@ -128,54 +163,69 @@ def fair_deck(func):
 
 
 class Deck(IDeck):
+    """Class Deck implement interface 'IDeck' and contain a list of Cards"""
     def __init__(self, shuffle=True):
+        """creates a list of 52 cards according to enums ['CardSuit','CardRank']\n
+         as default, shuffle the list, if not providing command otherwise """
         self._cards = [Card(suit, rank) for suit in CardSuit for rank in CardRank]
         if shuffle:
             self.shuffle()
 
     @property
     def cards(self):
+        """getter method for cards property"""
         return list(self._cards)
 
     @fair_deck
     def add_card(self, _card):
-        # if card in self._cards:
-        #     raise DeckCheatingError("Card already exists in the deck!")
+        """method from the interface\n
+         adds new card to the desk if not exist already"""
         self._cards.append(_card)
 
     def draw(self):
-        """ if cards exist, get and remove the card in the index 0"""
+        """ method from the interface,\n
+         if cards exist, get and remove the card in the index 0"""
         return self._cards.pop(0) if self._cards else None
 
     def shuffle(self):
+        """method from the interface\n
+        activates method random.shuffle on the list of cards """
         py_shuffle(self._cards)
 
     def __len__(self):
+        """returns the size of cards in the desk"""
         return len(self._cards)
 
     def __str__(self):
+        """ method for a better display list of cards properties"""
         return ', '.join(str(card) for card in self._cards)
 
     def __repr__(self):
-        return f"Deck({self._cards})"
+        """ method for a better display list of cards properties"""
+        return f"Deck({self.__str__()})"
 
     def __getitem__(self, index):
         """ get the card in given index """
         return self._cards[index]
 
     def __max__(self):
+        """implement max function on a list of cards"""
         return max(self._cards)
 
     def __min__(self):
+        """implement min function on a list of cards"""
         return min(self._cards)
 
 
 # ========== Utility Functions ==========
 def max_card(*cards):
+    """Returns the max card according to rank and suit"""
     return max(cards)
 
 
 def cards_stats(*cards, **kwargs):
+    """given max/min/ len,\n
+     return deck statistics in a dictionary of results"""
     results = {}
     if 'max' in kwargs:
         count = kwargs['max']
@@ -186,7 +236,6 @@ def cards_stats(*cards, **kwargs):
     if 'len' in kwargs:
         results['len'] = len(cards)
     return results
-
 
 if __name__ == '__main__':
     print("Basic Card actions:")
@@ -219,18 +268,17 @@ if __name__ == '__main__':
 
     print("running statistic global cards functions:")
     print("\nUsing max_card:")
-    print("Max:", max_card(*drawn))
+    print("Max from the drawn cards from before:", max_card(*drawn))
+    print("Max from the deck cards:", max_card(*deck))
 
     print("\nUsing cards_stats:")
     print(cards_stats(*deck.cards, max=2, min=1, len=1))
 
     # print("\nTesting fair_deck decorator:")
 
-
     # @fair_deck
     # def create_fair_deck():
     #     return Deck()
-
 
     # fair_deck_instance = create_fair_deck()
     # print("Deck created successfully.")

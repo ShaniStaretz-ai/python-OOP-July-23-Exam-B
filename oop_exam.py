@@ -70,7 +70,7 @@ class Card(ICard):
         return self.get_display_name()
 
     def __repr__(self):
-        return f"Card({self.rank.name}, {self.suit.name})"
+        return f"'{self.get_display_name()}'"
 
     def __eq__(self, other):
         if not isinstance(other, Card):
@@ -152,17 +152,35 @@ class Deck(IDeck):
     def __min__(self):
         return min(self._cards)
 
+# ========== Utility Functions ==========
+def max_card(*cards):
+    return max(cards)
+
+def cards_stats(*cards, **kwargs):
+    results = {}
+    if 'max' in kwargs:
+        count = kwargs['max']
+        results['max'] = sorted(cards, reverse=True)[:count]
+    if 'min' in kwargs:
+        count = kwargs['min']
+        results['min'] = sorted(cards)[:count]
+    if 'len' in kwargs:
+        results['len'] = len(cards)
+    return results
 
 
 if __name__ == '__main__':
+    print("Basic Card actions:")
+    print("Creating 3 cards example...")
     card1 = Card(CardSuit.SPADES, CardRank.ACE)
     card11 = Card(CardSuit.SPADES, CardRank.ACE)
     card2 = Card(CardSuit.HEARTS, CardRank.ACE)
-    print(card1.get_display_name())
-    print(card2.get_display_name())
-    print(card1 < card2)  # 14-spades(4)<14-heart(1)=False
-    print(card1 > card2)
-    print(card1 == card11)
+    print(f"card1:{card1.get_display_name()}")
+    print(f" card2:{card2.get_display_name()}")
+    print(f"card11:{card11.get_display_name()}")
+    print(f"card1 < card2?{card1 < card2}")  # 14-spades(4)<14-heart(1)=False
+    print(f"card1 > card2?{card1 > card2}")
+    print(f"card1 == card11?{card1 == card11}")
 
     print("Creating a new deck...")
     deck = Deck()
@@ -179,3 +197,10 @@ if __name__ == '__main__':
     print("Accessing cards directly by index:")
     for i in range(5):
         print(f"Card at index {i}: {deck[i]}")
+
+    print("running statistic global cards functions:")
+    print("\nUsing max_card:")
+    print("Max:", max_card(*drawn))
+
+    print("\nUsing cards_stats:")
+    print(cards_stats(*deck.cards, max=2, min=1, len=1))

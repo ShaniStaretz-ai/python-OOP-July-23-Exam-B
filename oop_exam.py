@@ -1,6 +1,8 @@
-
-from enum import Enum
 from abc import ABC, abstractmethod
+from enum import Enum
+from random import shuffle
+
+
 class ICard(ABC):
     @property
     @abstractmethod
@@ -16,6 +18,7 @@ class ICard(ABC):
     def get_display_name(self):
         pass
 
+
 class CardSuit(Enum):
     HEARTS = 1
     DIAMONDS = 2
@@ -25,6 +28,7 @@ class CardSuit(Enum):
     def __str__(self):
         return self.name.capitalize()
 
+
 class CardRank(Enum):
     TWO = 2
     THREE = 3
@@ -33,16 +37,16 @@ class CardRank(Enum):
     SIX = 6
     SEVEN = 7
     EIGHT = 8
-    NINE=9
-    TEN=10
-    JACK=11
-    QUEEN=12
-    KING=13
-    ACE=14
-
+    NINE = 9
+    TEN = 10
+    JACK = 11
+    QUEEN = 12
+    KING = 13
+    ACE = 14
 
     def __str__(self):
         return self.name.capitalize()
+
 
 class Card(ICard):
     def __init__(self, suit: CardSuit, rank: CardRank):
@@ -83,9 +87,72 @@ class Card(ICard):
             return self.suit.value < other.suit.value
         return self.rank.value < other.rank.value
 
-
     def __gt__(self, other):
         return other < self
+
+
+class DeckCheatingError(Exception):
+    """Raised when a card appears more than once in the deck"""
+    pass
+
+
+class IDeck(ABC):
+    @property
+    @abstractmethod
+    def cards(self): pass
+
+    @abstractmethod
+    def shuffle(self): pass
+
+    @abstractmethod
+    def draw(self): pass
+
+    @abstractmethod
+    def add_card(self, card): pass
+
+
+class Deck(IDeck):
+    def __init__(self, shuffle=True):
+        self._cards = [Card(suit, rank) for suit in CardSuit for rank in CardRank]
+        if shuffle:
+            self.shuffle()
+
+    @property
+    def cards(self):
+        return list(self._cards)
+
+    def add_card(self, card):
+        if card in self._cards:
+            raise DeckCheatingError("Card already exists in the deck!")
+        self._cards.append(card)
+
+    def draw(self):
+        """ if cards exist, get and remove the card in the index 0"""
+        return self._cards.pop(0) if self._cards else None
+
+    def shuffle(self):
+        shuffle(self._cards)
+
+    def __len__(self):
+        return len(self._cards)
+
+    def __str__(self):
+        return ', '.join(str(card) for card in self._cards)
+
+    def __repr__(self):
+        return f"Deck({self._cards})"
+
+    def __getitem__(self, index):
+        """ get the card in given index """
+        return self._cards[index]
+
+    def __max__(self):
+        return max(self._cards)
+
+    def __min__(self):
+        return min(self._cards)
+
+
 
 if __name__ == '__main__':
     card1 = Card(CardSuit.SPADES, CardRank.ACE)
@@ -93,6 +160,22 @@ if __name__ == '__main__':
     card2 = Card(CardSuit.HEARTS, CardRank.ACE)
     print(card1.get_display_name())
     print(card2.get_display_name())
-    print(card1<card2)#14-spades(4)<14-heart(1)=False
+    print(card1 < card2)  # 14-spades(4)<14-heart(1)=False
     print(card1 > card2)
     print(card1 == card11)
+
+    print("Creating a new deck...")
+    deck = Deck()
+    print(f"Deck has {len(deck)} cards.")
+
+    print("Drawing 3 cards to separate desk:")
+    drawn = [deck.draw() for _ in range(3)]
+    for card in drawn:
+        print(card)
+    print(f"After draw, Deck has {len(deck)} cards.")
+    print("Adding a card back to the deck...")
+    deck.add_card(drawn[0])
+    print(f"After add card, Deck has {len(deck)} cards.")
+    print("Accessing cards directly by index:")
+    for i in range(5):
+        print(f"Card at index {i}: {deck[i]}")
